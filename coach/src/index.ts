@@ -183,6 +183,10 @@ function describeError(error: unknown): { code: string; message: string } {
     return { code: "config", message: "Coach isn't configured correctly. The site owner has been notified in the logs." };
   }
   if (error instanceof Anthropic.BadRequestError) {
+    // An account problem (e.g. no API credits) also comes back as a 400, but a new chat won't fix it
+    if (/credit balance|billing/i.test(error.message)) {
+      return { code: "unavailable", message: "Coach is unavailable right now. Please try again later." };
+    }
     return { code: "bad_request", message: "Coach couldn't process this conversation. Start a new chat and try again." };
   }
   if (error instanceof Anthropic.InternalServerError || error instanceof Anthropic.APIConnectionError) {
