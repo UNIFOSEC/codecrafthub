@@ -1,0 +1,15 @@
+# Dependencies and build output (rebuilt by npm install / CI)
+node_modules/
+dist/
+.wrangler/
+
+# Secrets: never commit these
+.dev.vars
+.env.local
+.env.*.local
+
+# Temp and OS files
+*.tmp
+npm-debug.log*
+.DS_Store
+Thumbs.db

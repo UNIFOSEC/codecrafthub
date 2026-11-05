@@ -1,0 +1,5 @@
+# Copy to .dev.vars for local development (it's git-ignored). Never commit a real key.
+ANTHROPIC_API_KEY=your-key-here
+
+# Optional: test without a key or cost, against the scripted mock (npm run mock)
+# ANTHROPIC_BASE_URL=http://localhost:9099

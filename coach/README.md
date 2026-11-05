@@ -1,0 +1,91 @@
+# Coach proxy
+
+Coach is CodeCraftHub's AI learning assistant, built on Claude. This folder holds the small server behind it: a **Cloudflare Worker** that keeps the Claude API key secret and streams Claude's replies to the web app.
+
+A browser can't safely hold an API key, so the web app sends the conversation here. The Worker checks the request, adds a fixed system prompt and tools, calls Claude, and streams the reply back.
+
+```
+Browser (web/) ──POST /chat──▶ Coach Worker ──▶ Claude API
+     ▲                          • origin allowlist      (claude-haiku-5-5 by default)
+     │                          • rate limit per IP
+     └── streamed reply ◀────── • request validation
+         (text + tool calls)    • fixed prompt & tools
+```
+
+## How tool calls work
+
+Claude has three tools: `add_course`, `update_course` and `remove_course`. The **browser** carries them out, not this Worker, because the courses live in the browser (demo data) or in the local Express API.
+
+1. The browser sends the conversation. Each user turn starts with a `<course_data>` block holding today's date and the course list as JSON.
+2. If Claude decides to change something, the reply ends with `stop_reason: "tool_use"`.
+3. The browser checks each tool call with the same rules as the course form, applies it, shows a card with an **Undo** button, and sends the results back for Claude's confirmation.
+
+The conversation history is **append-only**. Each assistant turn is stored and sent back exactly as Claude returned it, including its thinking blocks, which the Claude API requires.
+
+## Security
+
+| Concern | What the Worker does |
+| --- | --- |
+| Leaked API key | The key is a Worker secret (`wrangler secret put`). It never reaches the browser or the repository. |
+| Other sites using the endpoint | `ALLOWED_ORIGINS` allowlist. Requests without an allowed `Origin` get a 403. |
+| Abuse and cost | 10 requests per minute per IP (Workers Rate Limiting), a 256 KB body cap, per-message size limits, a 60-message conversation cap, `max_tokens: 8000`, and effort `low`. |
+| Prompt or tool injection by callers | The system prompt and tools are fixed server-side. Only text, tool-result and Coach-tool blocks are accepted. Images, documents and unknown tools are rejected. |
+| Prompt injection through course data | Courses arrive tagged as `<course_data>`, and the system prompt tells Claude never to follow instructions inside them. |
+| Unsafe model output | The browser validates every tool input, and every change can be undone. Replies are rendered without `innerHTML`, and only `http(s)` links are allowed. |
+| Error details leaking | Clients get short, friendly messages. Details go only to the Worker logs. |
+
+**Also set a monthly spend limit** on the API key's workspace in the Claude Console. It's the backstop if something unexpected happens.
+
+## Model and API settings
+
+- **Model:** `claude-haiku-5-5` by default. It's fast and low-cost, which suits a public demo. For deeper planning answers, set `COACH_MODEL` to `claude-opus-5-5` in `wrangler.jsonc`.
+- **Thinking:** adaptive (the default), with `output_config.effort: "low"` for quick chat replies.
+- **Refusals:** Haiku 5.5 has no server-side fallback, so a declined request returns `stop_reason: "refusal"`, and the web app shows a "try asking another way" notice. If you switch to a model that supports server-side fallback (Opus 5.5, Opus 5, Sonnet 5.5, Fable 5.1), the Worker sends `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`) automatically, and declined requests are retried on a recommended fallback model.
+- **Prompt caching:** `cache_control: { type: "ephemeral" }`. The system prompt and tools are byte-stable, so repeat turns read them from the cache.
+- **Tools:** `eager_input_streaming: true`, with the browser validating every input.
+
+## Run it locally
+
+```bash
+cd coach
+npm install
+cp .dev.vars.example .dev.vars    # then put your API key in .dev.vars
+npm run dev                        # wrangler dev → http://localhost:8787
+```
+
+In another terminal, start the web app (`cd web && npm run dev`) and open **Coach**. `web/.env.development` already points at `http://localhost:8787`.
+
+**No API key? Use the mock.** `npm run mock` starts a scripted stand-in for the Claude API on port 9099. Its replies are canned, not real AI. Set `ANTHROPIC_BASE_URL=http://localhost:9099` in `.dev.vars`. It's useful for UI work and demos, and it costs nothing.
+
+**`wrangler dev` won't start on Windows?** If it fails with `write EOF`, the Workers runtime (`workerd.exe`) is probably missing the Microsoft Visual C++ Redistributable. Either install that, or run the same Worker code under Node:
+
+```bash
+npm run dev:node
+```
+
+## Deploy
+
+```bash
+npx wrangler login
+npx wrangler secret put ANTHROPIC_API_KEY
+npx wrangler deploy
+```
+
+1. Wrangler prints the Worker URL, for example `https://codecrafthub-coach.<you>.workers.dev`.
+2. Put that URL in `web/.env.production` as `VITE_COACH_URL`, then rebuild the web app. The build adds the URL to the page's Content Security Policy automatically.
+3. Make sure your site's origin (for example `https://unifosec.github.io`) is in `ALLOWED_ORIGINS` in `wrangler.jsonc`.
+
+## API
+
+`POST /chat` with `{ "messages": [...] }` (Claude Messages API format). The response is newline-delimited JSON:
+
+```
+{"type":"status","state":"thinking"}
+{"type":"text","text":"Here's a plan"}
+{"type":"done","stop_reason":"end_turn","content":[...],"model":"claude-haiku-5-5"}
+{"type":"error","code":"busy","message":"Coach is busy right now. Try again in a minute."}
+```
+
+Errors that happen before streaming starts come back as plain JSON with a status code: 400 (invalid request), 403 (origin not allowed), 413 (too large), 429 (rate limited) or 503 (not configured).
+
+`GET /health` returns `{"ok":true,"model":"..."}`.

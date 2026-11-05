@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeCraftHub: Your Learning Management Platform</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-2: #f0f3f9;
+      --border: #dfe4ee;
+      --text: #1b2333;
+      --muted: #5e6a80;
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --primary-text: #ffffff;
+      --danger: #c92a2a;
+      --danger-bg: #fff0f0;
+      --success: #2b8a3e;
+      --success-bg: #ebfbee;
+      --ns-bg: #eef1f6;   --ns-fg: #4a5568;
+      --ip-bg: #fff4e0;   --ip-fg: #a35c00;
+      --c-bg: #e6f7ea;    --c-fg: #217a35;
+      --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
+      --radius: 10px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f141d;
+        --surface: #171e2a;
+        --surface-2: #1e2735;
+        --border: #2a3546;
+        --text: #e6ebf3;
+        --muted: #98a3b6;
+        --primary: #a78bfa;
+        --primary-hover: #c4b5fd;
+        --primary-text: #ffffff;
+        --danger: #ff8787;
+        --danger-bg: #3a1d20;
+        --success: #69db7c;
+        --success-bg: #1a3322;
+        --ns-bg: #263042;  --ns-fg: #b7c1d3;
+        --ip-bg: #3d2d12;  --ip-fg: #ffc266;
+        --c-bg: #173622;   --c-fg: #7be495;
+        --shadow: 0 1px 3px rgba(0, 0, 0, .4);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    header {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 24px;
+    }
+    header h1 { margin: 0; font-size: 1.6rem; }
+    header p { margin: 2px 0 0; color: var(--muted); font-size: .95rem; }
+    .api-status { font-size: .85rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+    .dot.ok { background: var(--success); }
+    .dot.down { background: var(--danger); }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px 16px; box-shadow: var(--shadow);
+    }
+    .stat .label { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .stat .value { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    /* Layout */
+    .layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 18px;
+    }
+    .card h2 { margin: 0 0 14px; font-size: 1.1rem; }
+
+    /* Form */
+    label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: 4px; }
+    input, textarea, select {
+      width: 100%; font: inherit; color: var(--text); background: var(--surface-2);
+      border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    input:focus, textarea:focus, select:focus, button:focus-visible {
+      outline: 2px solid var(--primary); outline-offset: 1px;
+    }
+    .field { margin-bottom: 12px; }
+    .field .error-text { color: var(--danger); font-size: .8rem; margin-top: 3px; min-height: 0; }
+    .field.invalid input, .field.invalid textarea, .field.invalid select { border-color: var(--danger); }
+    .form-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+    button {
+      font: inherit; font-weight: 600; border-radius: 8px; padding: 8px 14px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    }
+    button:hover { filter: brightness(.97); }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-primary { background: #8B5CF6; border-color: #8B5CF6; color: #ffffff; }
+    .btn-primary:hover { background: #7C3AED; border-color: #7C3AED; filter: none; }
+    /* Shown on the submit button for a moment after a course is added */
+    .btn-success {
+      background: #F59E0B; border-color: #F59E0B; color: #1b2333;
+      transition: background-color .2s, border-color .2s;
+    }
+    .btn-success:hover { background: #F59E0B; filter: brightness(1.05); }
+    .btn-danger { color: var(--danger); }
+    .btn-sm { padding: 4px 10px; font-size: .85rem; }
+
+    /* Toolbar */
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .toolbar input { flex: 1 1 200px; }
+    .toolbar select { flex: 0 0 170px; }
+
+    /* Course list */
+    .course-list { display: flex; flex-direction: column; gap: 10px; }
+    .course {
+      border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; background: var(--surface);
+      display: grid; grid-template-columns: 1fr auto; gap: 6px 12px;
+    }
+    .course.editing { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+    .course h3 { margin: 0; font-size: 1rem; overflow-wrap: anywhere; }
+    .course .desc { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: .92rem; overflow-wrap: anywhere; }
+    .course .meta {
+      grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+      font-size: .82rem; color: var(--muted);
+    }
+    .course .actions { display: flex; gap: 6px; align-items: start; }
+    .overdue { color: var(--danger); font-weight: 600; }
+
+    .badge { display: inline-block; font-size: .78rem; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+    .badge.ns { background: var(--ns-bg); color: var(--ns-fg); }
+    .badge.ip { background: var(--ip-bg); color: var(--ip-fg); }
+    .badge.c  { background: var(--c-bg);  color: var(--c-fg); }
+
+    .empty, .loading { text-align: center; color: var(--muted); padding: 32px 8px; }
+
+    /* Banner + toast */
+    .banner {
+      display: none; background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger);
+      border-radius: var(--radius); padding: 12px 14px; margin-bottom: 20px; font-size: .92rem;
+    }
+    .banner.show { display: block; }
+    .banner code { font-family: ui-monospace, Consolas, monospace; }
+    #toast {
+      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
+      background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px;
+      font-size: .9rem; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+      max-width: calc(100% - 32px); z-index: 10;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.error { background: var(--danger); color: #fff; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+    @media (max-width: 820px) {
+      .layout { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>CodeCraftHub</h1>
+        <p>Personalized learning dashboard: manage your course listings</p>
+      </div>
+      <div class="api-status" aria-live="polite">
+        <span class="dot" id="apiDot"></span>
+        <span id="apiStatusText">Connecting…</span>
+      </div>
+    </header>
+
+    <div class="banner" id="banner" role="alert"></div>
+
+    <section class="stats" aria-label="Course statistics">
+      <div class="stat"><div class="label">Total</div><div class="value" id="statTotal">–</div></div>
+      <div class="stat"><div class="label">Not Started</div><div class="value" id="statNotStarted">–</div></div>
+      <div class="stat"><div class="label">In Progress</div><div class="value" id="statInProgress">–</div></div>
+      <div class="stat"><div class="label">Completed</div><div class="value" id="statCompleted">–</div></div>
+    </section>
+
+    <div class="layout">
+      <!-- Create / edit form -->
+      <section class="card" aria-labelledby="formTitle">
+        <h2 id="formTitle">Add a course</h2>
+        <form id="courseForm" novalidate>
+          <input type="hidden" id="courseId" />
+          <div class="field">
+            <label for="name">Course name</label>
+            <input id="name" name="name" maxlength="100" required placeholder="e.g. Node.js REST APIs" />
+            <div class="error-text" id="nameError"></div>
+          </div>
+          <div class="field">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" maxlength="1000" required
+              placeholder="What will you learn?"></textarea>
+            <div class="error-text" id="descriptionError"></div>
+          </div>
+          <div class="field">
+            <label for="target_date">Target date</label>
+            <input type="date" id="target_date" name="target_date" required />
+            <div class="error-text" id="target_dateError"></div>
+          </div>
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status" required>
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+            <div class="error-text" id="statusError"></div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" id="submitBtn">Add course</button>
+            <button type="button" id="cancelBtn" hidden>Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Course list -->
+      <section class="card" aria-labelledby="listTitle">
+        <h2 id="listTitle">Courses</h2>
+        <div class="toolbar">
+          <label class="sr-only" for="searchInput">Search courses</label>
+          <input type="search" id="searchInput" placeholder="Search name or description…" />
+          <label class="sr-only" for="statusFilter">Filter by status</label>
+          <select id="statusFilter">
+            <option value="">All statuses</option>
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <button type="button" id="refreshBtn">Refresh</button>
+        </div>
+        <div id="courseList" class="course-list" aria-live="polite">
+          <div class="loading">Loading courses…</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ------------------------------------------------------------------
+    // Configuration: change this if your backend runs elsewhere
+    // ------------------------------------------------------------------
+    const API_BASE_URL = "http://localhost:5000/api/courses";
+
+    const STATUS_CLASS = { "Not Started": "ns", "In Progress": "ip", "Completed": "c" };
+    const FIELDS = ["name", "description", "target_date", "status"];
+
+    let courses = [];
+
+    const $ = (id) => document.getElementById(id);
+    const form = $("courseForm");
+
+    // ------------------------------------------------------------------
+    // API helper: every request goes through here so errors are handled
+    // the same way. The backend always answers {success, error?, ...}.
+    // ------------------------------------------------------------------
+    async function api(path = "", options = {}) {
+      let response;
+      try {
+        response = await fetch(API_BASE_URL + path, {
+          headers: { "Content-Type": "application/json" },
+          ...options,
+        });
+      } catch (networkError) {
+        setApiStatus(false);
+        throw new Error(
+          `Cannot reach the API at ${API_BASE_URL}. Is the backend running (npm start)?`
+        );
+      }
+
+      let body = null;
+      try { body = await response.json(); } catch (_) { /* non-JSON response */ }
+
+      setApiStatus(true);
+      if (!response.ok || (body && body.success === false)) {
+        const err = new Error((body && body.error) || `Request failed (HTTP ${response.status})`);
+        err.status = response.status;
+        err.details = body && body.details;
+        throw err;
+      }
+      return body;
+    }
+
+    function setApiStatus(ok) {
+      $("apiDot").className = "dot " + (ok ? "ok" : "down");
+      $("apiStatusText").textContent = ok ? "API connected" : "API unreachable";
+      const banner = $("banner");
+      if (ok) {
+        banner.classList.remove("show");
+      } else {
+        banner.innerHTML =
+          `Could not connect to <code>${escapeHtml(API_BASE_URL)}</code>. ` +
+          `Start the backend with <code>npm start</code>, then click Refresh.`;
+        banner.classList.add("show");
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Load + render
+    // ------------------------------------------------------------------
+    async function loadCourses() {
+      try {
+        const data = await api();
+        courses = data.courses || [];
+        renderCourses();
+        renderStats();
+      } catch (error) {
+        courses = [];
+        $("courseList").innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+        renderStats(true);
+      }
+    }
+
+    function renderStats(unavailable = false) {
+      const count = (s) => courses.filter((c) => c.status === s).length;
+      $("statTotal").textContent = unavailable ? "–" : courses.length;
+      $("statNotStarted").textContent = unavailable ? "–" : count("Not Started");
+      $("statInProgress").textContent = unavailable ? "–" : count("In Progress");
+      $("statCompleted").textContent = unavailable ? "–" : count("Completed");
+    }
+
+    function renderCourses() {
+      const query = $("searchInput").value.trim().toLowerCase();
+      const statusFilter = $("statusFilter").value;
+      const editingId = Number($("courseId").value) || null;
+
+      const visible = courses
+        .filter((c) => !statusFilter || c.status === statusFilter)
+        .filter((c) =>
+          !query ||
+          String(c.name).toLowerCase().includes(query) ||
+          String(c.description).toLowerCase().includes(query)
+        )
+        .sort((a, b) => String(a.target_date).localeCompare(String(b.target_date)));
+
+      const list = $("courseList");
+      if (courses.length === 0) {
+        list.innerHTML = `<div class="empty">No courses yet. Add your first one with the form.</div>`;
+        return;
+      }
+      if (visible.length === 0) {
+        list.innerHTML = `<div class="empty">No courses match your search or filter.</div>`;
+        return;
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      list.innerHTML = visible.map((c) => {
+        const overdue = c.status !== "Completed" && c.target_date < today;
+        return `
+          <article class="course${c.id === editingId ? " editing" : ""}" data-id="${c.id}">
+            <h3>${escapeHtml(c.name)}</h3>
+            <div class="actions">
+              <button type="button" class="btn-sm" data-action="edit" aria-label="Edit ${escapeHtml(c.name)}">Edit</button>
+              <button type="button" class="btn-sm btn-danger" onclick="handleDelete(${Number(c.id)})" aria-label="Remove ${escapeHtml(c.name)}">Remove</button>
+            </div>
+            <p class="desc">${escapeHtml(c.description)}</p>
+            <div class="meta">
+              <span class="badge ${STATUS_CLASS[c.status] || "ns"}">${escapeHtml(c.status)}</span>
+              <span class="${overdue ? "overdue" : ""}">Target: ${escapeHtml(formatDate(c.target_date))}${overdue ? " (overdue)" : ""}</span>
+              <span>#${c.id}</span>
+              <span>Added ${escapeHtml(String(c.created_at || "").slice(0, 10))}</span>
+            </div>
+          </article>`;
+      }).join("");
+    }
+
+    // ------------------------------------------------------------------
+    // Create / update
+    // ------------------------------------------------------------------
+    function readForm() {
+      return {
+        name: $("name").value.trim(),
+        description: $("description").value.trim(),
+        target_date: $("target_date").value,
+        status: $("status").value,
+      };
+    }
+
+    // Client-side checks mirror the API's rules so users get instant feedback;
+    // the API still validates everything and its message is shown if it rejects.
+    function validate(data) {
+      const errors = {};
+      if (!data.name) errors.name = "Course name is required.";
+      else if (data.name.length > 100) errors.name = "Keep the name to 100 characters or fewer.";
+      if (!data.description) errors.description = "Description is required.";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.target_date)) errors.target_date = "Pick a target date.";
+      if (!STATUS_CLASS[data.status]) errors.status = "Choose a status.";
+      return errors;
+    }
+
+    function showFieldErrors(errors) {
+      FIELDS.forEach((f) => {
+        $(f + "Error").textContent = errors[f] || "";
+        $(f).closest(".field").classList.toggle("invalid", Boolean(errors[f]));
+      });
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const data = readForm();
+      const errors = validate(data);
+      showFieldErrors(errors);
+      if (Object.keys(errors).length > 0) {
+        $(Object.keys(errors)[0]).focus();
+        return;
+      }
+
+      const id = $("courseId").value;
+      const submitBtn = $("submitBtn");
+      submitBtn.disabled = true;
+      try {
+        if (id) {
+          await api(`/${id}`, { method: "PUT", body: JSON.stringify(data) });
+          toast("Course updated");
+        } else {
+          await api("", { method: "POST", body: JSON.stringify(data) });
+          toast("Course added");
+        }
+        resetForm();
+        if (!id) flashAddSuccess();
+        await loadCourses();
+      } catch (error) {
+        toast(error.message, true);
+        if (error.status === 404) {
+          resetForm();
+          await loadCourses();
+        }
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    // Turn the submit button green with a confirmation for a moment,
+    // then switch it back to the normal primary button.
+    let successTimer;
+    function flashAddSuccess() {
+      const btn = $("submitBtn");
+      btn.classList.replace("btn-primary", "btn-success");
+      btn.textContent = "✓ Course added";
+      clearTimeout(successTimer);
+      successTimer = setTimeout(clearAddSuccess, 1500);
+    }
+
+    function clearAddSuccess() {
+      clearTimeout(successTimer);
+      const btn = $("submitBtn");
+      if (!btn.classList.contains("btn-success")) return;
+      btn.classList.replace("btn-success", "btn-primary");
+      btn.textContent = $("courseId").value ? "Save changes" : "Add course";
+    }
+
+    function startEdit(course) {
+      clearAddSuccess();
+      $("courseId").value = course.id;
+      $("name").value = course.name;
+      $("description").value = course.description;
+      $("target_date").value = course.target_date;
+      $("status").value = course.status;
+      $("formTitle").textContent = `Edit course #${course.id}`;
+      $("submitBtn").textContent = "Save changes";
+      $("cancelBtn").hidden = false;
+      showFieldErrors({});
+      renderCourses();
+      $("name").focus();
+      form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function resetForm() {
+      form.reset();
+      $("courseId").value = "";
+      $("formTitle").textContent = "Add a course";
+      $("submitBtn").textContent = "Add course";
+      $("cancelBtn").hidden = true;
+      showFieldErrors({});
+      renderCourses();
+    }
+
+    // ------------------------------------------------------------------
+    // Delete
+    // ------------------------------------------------------------------
+    // Called from each course's Remove button: onclick="handleDelete(id)"
+    function handleDelete(id) {
+      const course = courses.find((c) => c.id === id);
+      if (course) deleteCourse(course);
+    }
+
+    async function deleteCourse(course) {
+      if (!confirm(`Remove "${course.name}"? This cannot be undone.`)) return;
+      try {
+        await api(`/${course.id}`, { method: "DELETE" });
+        if (Number($("courseId").value) === course.id) resetForm();
+        toast("Course removed");
+      } catch (error) {
+        toast(error.message, true);
+      }
+      await loadCourses();
+    }
+
+    // ------------------------------------------------------------------
+    // Events
+    // ------------------------------------------------------------------
+    $("courseList").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const id = Number(button.closest(".course").dataset.id);
+      const course = courses.find((c) => c.id === id);
+      if (!course) return;
+      if (button.dataset.action === "edit") startEdit(course);
+    });
+
+    $("cancelBtn").addEventListener("click", resetForm);
+    $("refreshBtn").addEventListener("click", loadCourses);
+    $("searchInput").addEventListener("input", renderCourses);
+    $("statusFilter").addEventListener("change", renderCourses);
+
+    // ------------------------------------------------------------------
+    // Utilities
+    // ------------------------------------------------------------------
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[ch]));
+    }
+
+    function formatDate(isoDate) {
+      const [y, m, d] = String(isoDate).split("-").map(Number);
+      if (!y || !m || !d) return isoDate;
+      return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+        year: "numeric", month: "short", day: "numeric",
+      });
+    }
+
+    let toastTimer;
+    function toast(message, isError = false) {
+      const el = $("toast");
+      el.textContent = message;
+      el.className = "show" + (isError ? " error" : "");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => (el.className = ""), isError ? 5000 : 2500);
+    }
+
+    loadCourses();
+  </script>
+</body>
+</html>

@@ -1,0 +1,537 @@
+/* Coach chat. Uses the design tokens from styles.css. */
+
+.coach-page {
+  max-width: 1180px;
+}
+
+.coach-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 170px);
+  min-height: 520px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.transcript {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 24px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.msg {
+  display: flex;
+  gap: 12px;
+  max-width: 100%;
+  animation: msg-in 0.18s ease-out;
+}
+
+.msg-user {
+  justify-content: flex-end;
+}
+
+.bubble {
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  overflow-wrap: anywhere;
+}
+
+.msg-user .bubble {
+  max-width: min(78%, 620px);
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+  white-space: pre-wrap;
+}
+
+.msg-assistant .bubble {
+  flex: 1;
+  max-width: 720px;
+  padding: 4px 0 0;
+}
+
+.coach-avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+/* ------------------------------------------------------ rendered markdown */
+
+.md {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  line-height: 1.6;
+}
+
+.md-heading {
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.md-list {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.md-list li::marker {
+  color: var(--text-3);
+}
+
+.md-code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--surface-3);
+}
+
+.md-pre {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.md-quote {
+  margin: 0;
+  padding: 4px 0 4px 14px;
+  border-left: 3px solid var(--border-strong);
+  color: var(--text-2);
+}
+
+.md-hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+/* Blinking caret while a reply streams in */
+.is-streaming > :last-child::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 1.05em;
+  margin-left: 3px;
+  vertical-align: text-bottom;
+  border-radius: 2px;
+  background: var(--accent);
+  animation: caret 1s steps(2) infinite;
+}
+
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: bounce 1.2s infinite ease-in-out;
+}
+
+.dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* ------------------------------------------------------ notices, actions */
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  align-self: center;
+  max-width: 560px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+.notice .icon {
+  margin-top: 2px;
+}
+
+.notice-error {
+  border-radius: var(--r);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.action-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 44px;
+  max-width: 620px;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  animation: msg-in 0.2s ease-out;
+}
+
+.action-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+}
+
+.action-added .action-icon {
+  background: var(--done-soft);
+  color: var(--done);
+}
+
+.action-updated .action-icon {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.action-removed .action-icon {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.action-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.action-text strong {
+  overflow-wrap: anywhere;
+}
+
+.action-text .muted {
+  font-size: 13px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.action-card.is-undone {
+  opacity: 0.6;
+}
+
+.action-card.is-undone strong {
+  text-decoration: line-through;
+}
+
+/* -------------------------------------------------------- empty state */
+
+.coach-welcome {
+  margin: auto;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.coach-welcome h2 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.coach-welcome > p {
+  color: var(--text-2);
+  max-width: 46ch;
+}
+
+.coach-hero-avatar {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 6px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.35);
+}
+
+.suggestions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, transform 0.15s;
+}
+
+.suggestion .icon {
+  margin-top: 2px;
+  color: var(--accent-text);
+}
+
+.suggestion:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+/* ------------------------------------------------------------ composer */
+
+.composer {
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.composer-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.composer-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.composer-input {
+  flex: 1;
+  min-height: 24px;
+  max-height: 168px;
+  padding: 6px 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: none;
+  line-height: 1.5;
+}
+
+.composer-input::placeholder {
+  color: var(--text-3);
+}
+
+.composer-send {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.composer-send:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.composer-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.composer-send.is-stop {
+  background: var(--text);
+  color: var(--surface);
+}
+
+.composer-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.composer-counter {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- side */
+
+.coach-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.side-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+}
+
+.side-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.side-card h2:not(:first-child) {
+  margin-top: 6px;
+}
+
+.side-card p {
+  font-size: 13.5px;
+}
+
+.side-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--text-2);
+}
+
+.side-list li {
+  display: flex;
+  gap: 8px;
+}
+
+.side-list .icon {
+  margin-top: 2px;
+  color: var(--accent-text);
+}
+
+@keyframes msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1100px) {
+  .coach-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .coach-side {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .chat {
+    height: calc(100dvh - 250px - env(safe-area-inset-bottom));
+    min-height: 420px;
+  }
+
+  .transcript {
+    padding: 16px 14px 8px;
+  }
+
+  .action-card {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+
+  .composer-foot > span:first-child {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .suggestions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .msg-user .bubble {
+    max-width: 88%;
+  }
+}
